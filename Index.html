@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Tracker & Review Generator</title>
+  <style>
+    :root { 
+      --accent: #0071e3; 
+      --bg: #f5f5f7; 
+      --card-bg: #ffffff;
+      --text: #1d1d1f;
+      --subtext: #6e6e73;
+      --border: #e0e0e0;
+      --radius-sm: 2px;
+      --radius-md: 4px;
+    }
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background: var(--bg); 
+      margin: 0; 
+      padding: 24px; 
+      color: var(--text); 
+    }
+    
+    .container { max-width: 1050px; margin: 0 auto; }
+    
+    /* Header & Navigation */
+    .header { margin-bottom: 20px; }
+    .header h1 { font-size: 22px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.3px; }
+    
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn { 
+      background: transparent; 
+      border: none; 
+      font-size: 13px; 
+      font-weight: 600; 
+      padding: 8px 14px; 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      color: var(--subtext); 
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover { background: rgba(0,0,0,0.04); }
+    .tab-btn.active { background: var(--accent); color: white; }
+
+    /* Cards & Layout */
+    .card { background: var(--card-bg); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 16px; }
+    .card h2 { font-size: 16px; margin-top: 0; margin-bottom: 14px; font-weight: 600; }
+    .card h3 { font-size: 14px; margin-top: 0; margin-bottom: 10px; font-weight: 600; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Grid & Forms */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 4px; color: #424245; }
+    
+    input, textarea { 
+      width: 100%; 
+      padding: 8px 10px; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-sm); 
+      font-size: 13px; 
+      box-sizing: border-box; 
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    
+    select {
+      width: 100%;
+      padding: 8px 32px 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%236e6e73" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+      background-color: #fff;
+      cursor: pointer;
+    }
+
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    
+    button { 
+      background: var(--accent); 
+      color: white; 
+      border: none; 
+      padding: 8px 14px; 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      font-weight: 500; 
+      font-size: 13px;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.9; }
+    button.danger { background: #ff3b30; }
+    button.secondary { background: #e5e5ea; color: #1d1d1f; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: middle; }
+    th { background: #f2f2f7; font-weight: 600; color: #424245; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    
+    .prompt-box { 
+      background: #1c1c1e; 
+      color: #f2f2f7; 
+      padding: 14px; 
+      border-radius: var(--radius-sm); 
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+      font-size: 12px; 
+      white-space: pre-wrap; 
+      word-break: break-word; 
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    /* Questions & Task List Styling */
+    .date-group-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--subtext);
+      margin: 16px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .question-item { 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-sm); 
+      padding: 12px; 
+      margin-bottom: 10px; 
+      background: #fff; 
+    }
+    .question-item.completed { background: #f9f9fb; }
+    .question-text { font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+    .question-item.completed .question-text { text-decoration: line-through; color: var(--subtext); }
+    .question-meta { font-size: 11px; color: var(--subtext); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+    .comment-box { margin-top: 6px; background: #f2f2f7; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+    }
+    .badge-open { background: #ffcc00; color: #4a3b00; }
+    .badge-answered { background: #34c759; color: #ffffff; }
+
+    /* Bar Chart Styling for Insights */
+    .chart-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 12px; }
+    .chart-label { width: 130px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chart-bar-bg { flex-grow: 1; background: #e5e5ea; height: 14px; border-radius: var(--radius-sm); overflow: hidden; margin: 0 10px; }
+    .chart-bar-fill { background: var(--accent); height: 100%; border-radius: var(--radius-sm); transition: width 0.3s ease; }
+    .chart-value { width: 50px; font-weight: 600; text-align: right; }
+
+    /* NOTION STYLE TIMELINE GANTT STYLES */
+    .notion-gantt-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      margin-top: 10px;
+      position: relative;
+    }
+    .notion-gantt-header {
+      display: flex;
+      background: #f8f8fa;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .notion-day-cell {
+      min-width: 64px;
+      max-width: 64px;
+      text-align: center;
+      padding: 8px 0;
+      border-right: 1px solid #f0f0f0;
+      font-size: 10px;
+      color: var(--subtext);
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .notion-gantt-body {
+      position: relative;
+      padding: 16px 0;
+      min-height: 120px;
+    }
+    .notion-grid-bg {
+      display: flex;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      pointer-events: none;
+    }
+    .notion-grid-cell {
+      min-width: 64px;
+      max-width: 64px;
+      border-right: 1px solid #f4f4f6;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .notion-bar-row {
+      position: relative;
+      height: 52px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      z-index: 2;
+    }
+    
+    .notion-pill {
+      position: absolute;
+      height: 44px;
+      border-radius: 6px;
+      padding: 4px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      overflow: hidden;
+      user-select: none;
+      pointer-events: none;
+    }
+    .notion-pill-header {
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+    .notion-pill-task {
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+    .notion-delete-btn-wrap {
+      position: absolute;
+      right: 8px;
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Work Tracker & Review Generator</h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('logTab', event)">Daily Log</button>
+    <button class="tab-btn" onclick="switchTab('projectTab', event)">Manage Projects & Assigners</button>
+    <button class="tab-btn" onclick="switchTab('dashboardTab', event)">Dashboard & Gemini Report</button>
+    <button class="tab-btn" onclick="switchTab('insightsTab', event)">Assigner Insights</button>
+    <button class="tab-btn" onclick="switchTab('timelineTab', event)">Timeline (Gantt)</button>
+    <button class="tab-btn" onclick="switchTab('questionsTab', event)">Open Questions & POC</button>
+  </div>
+
+  <!-- TAB 1: DAILY LOG -->
+  <div id="logTab" class="tab-content active card">
+    <h2>Log Work Entry</h2>
+    
+    <div class="form-group" style="max-width: 250px;">
+      <label>Entry Date</label>
+      <input type="date" id="logDate">
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Project</label>
+        <select id="logProject" onchange="updateInitiativeDropdown('logProject', 'logInitiative')">
+          <option value="">Select Project</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Initiative / Work Item</label>
+        <select id="logInitiative">
+          <option value="">Select Initiative</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Who Assigned / Assigner</label>
+        <select id="logAssigner">
+          <option value="">Select Assigner</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Potential Upcoming Work</label>
+        <input type="text" id="logUpcoming" placeholder="e.g., Next phase testing, dependency follow-up">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Remarks / Work Done</label>
+      <textarea id="logRemarks" rows="3" placeholder="Describe the contributions, meetings, or asks completed..."></textarea>
+    </div>
+
+    <button onclick="saveLog()">Save Log Entry</button>
+  </div>
+
+  <!-- TAB 2: PROJECTS & ASSIGNERS SETUP -->
+  <div id="projectTab" class="tab-content">
+    <div class="card">
+      <h2>Add New Project & Initiatives</h2>
+      <div class="form-group">
+        <label>Project Name</label>
+        <input type="text" id="newProjectName" placeholder="e.g., Analytics Engine Upgrade">
+      </div>
+      <div class="form-group">
+        <label>Initiatives / Work Items (Comma separated)</label>
+        <input type="text" id="newInitiatives" placeholder="e.g., Schema Redesign, API Auth, Performance Tuning">
+      </div>
+      <button onclick="addProject()">Save Project</button>
+    </div>
+
+    <div class="card">
+      <h2>Add Assigner</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Assigner Name</label>
+          <input type="text" id="newAssignerName" placeholder="e.g., Sarah Jenkins">
+        </div>
+        <div style="display: flex; align-items: flex-end; margin-bottom: 12px;">
+          <button onclick="addAssigner()">Add Assigner to List</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Configured Projects</h3>
+        <table id="projectsTable">
+          <thead>
+            <tr><th>Project Name</th><th>Initiatives</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Configured Assigners</h3>
+        <table id="assignersTable">
+          <thead>
+            <tr><th>Assigner Name</th><th>Action</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: DASHBOARD & GEMINI REPORT -->
+  <div id="dashboardTab" class="tab-content">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>All Logged Work</h2>
+        <button class="danger" onclick="clearLogs()">Clear All Logs</button>
+      </div>
+      <table id="logsTable">
+        <thead>
+          <tr><th>Date</th><th>Project</th><th>Initiative</th><th>Assigner</th><th>Remarks</th><th>Upcoming</th><th>Action</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Generate Review Report Prompt for Gemini</h2>
+      <p style="font-size: 12px; color: var(--subtext);">Compile all recorded logs into a prompt engineered for Gemini to format into your mid-year or annual review.</p>
+      
+      <button onclick="generateGeminiPrompt()" style="background: #34c759;">Generate Prompt</button>
+      <button class="secondary" onclick="copyPrompt()">Copy to Clipboard</button>
+      
+      <div id="geminiPromptOutput" class="prompt-box">Click "Generate Prompt" above to compile your work history...</div>
+    </div>
+
+    <div class="card">
+      <h2>Data Backup & Security</h2>
+      <p style="font-size: 12px; color: var(--subtext);">Export a copy of your app data to keep as a safe backup or import a saved backup file to restore your entries.</p>
+      <button onclick="exportBackup()" style="background: #0071e3;">Export Backup (.json)</button>
+      <button class="secondary" onclick="document.getElementById('importFileInput').click()">Import Backup File</button>
+      <input type="file" id="importFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
+    </div>
+  </div>
+
+  <!-- TAB 4: ASSIGNER INSIGHTS -->
+  <div id="insightsTab" class="tab-content card">
+    <h2>Monthly Assigner Task Insights</h2>
+    <p style="font-size: 12px; color: var(--subtext); margin-bottom: 16px;">Analyze who assigns the highest volume of work on a monthly basis.</p>
+    
+    <div class="grid-2" style="max-width: 360px; margin-bottom: 16px;">
+      <div class="form-group">
+        <label>Select Month</label>
+        <select id="insightMonth" onchange="renderAssignerInsights()">
+          <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+          <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+          <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+          <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Select Year</label>
+        <select id="insightYear" onchange="renderAssignerInsights()"></select>
+      </div>
+    </div>
+
+    <div id="chartContainer" style="margin-bottom: 20px;"></div>
+
+    <h3>Detailed Assigner Task Breakdown</h3>
+    <table id="insightsTable">
+      <thead>
+        <tr><th>Assigner Name</th><th>Tasks Assigned</th><th>% of Monthly Total</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- TAB 5: TIMELINE (GANTT CHART) -->
+  <div id="timelineTab" class="tab-content">
+    <div class="card">
+      <h2>Add Work Item to Timeline Schedule</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Project</label>
+          <select id="tlProject">
+            <option value="">Select Project</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assigner</label>
+          <select id="tlAssigner">
+            <option value="">Select Assigner</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" id="tlStartDate">
+        </div>
+        <div class="form-group">
+          <label>Tentative End Date</label>
+          <input type="date" id="tlEndDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Work Description / Task</label>
+        <input type="text" id="tlWork" placeholder="e.g., Rewrite Query Caching Logic">
+      </div>
+      <button onclick="addTimelineItem()">Add to Timeline</button>
+    </div>
+
+    <div class="card">
+      <h2>Timeline View</h2>
+      <div id="ganttContainer"></div>
+    </div>
+  </div>
+
+  <!-- TAB 6: OPEN QUESTIONS & POC -->
+  <div id="questionsTab" class="tab-content">
+    <div class="card">
+      <h2>Add New Question / POC Item</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="qDate">
+        </div>
+        <div class="form-group">
+          <label>Target Person (Ask Whom)</label>
+          <select id="qPerson">
+            <option value="">Select Person</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Question / POC Details</label>
+        <input type="text" id="qText" placeholder="e.g., How should we handle null responses in the API?">
+      </div>
+      <button onclick="addQuestion()">Add Question</button>
+    </div>
+
+    <div class="card">
+      <h2>Questions & POC Task List</h2>
+      <div id="questionsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let appData = JSON.parse(localStorage.getItem('mac_tracker_db')) || {
+    projects: [
+      { id: 1, name: "Core Infrastructure", initiatives: ["Database Upgrade", "Security Audit"] }
+    ],
+    assigners: ["Alex Rivera", "Sarah Jenkins"],
+    logs: [],
+    questions: [],
+    timeline: []
+  };
+
+  if (appData.bas && !appData.assigners) {
+    appData.assigners = appData.bas;
+    delete appData.bas;
+  }
+  if (!appData.questions) appData.questions = [];
+  if (!appData.timeline) appData.timeline = [];
+
+  const colorPalette = [
+    { bg: "#EBF3FE", text: "#0055CC", border: "#B8D5FB" },
+    { bg: "#FDF2F2", text: "#DE350B", border: "#F8C4C4" },
+    { bg: "#E3FCEF", text: "#006644", border: "#ABF5D1" },
+    { bg: "#FFF8E6", text: "#FF8B00", border: "#FFE380" },
+    { bg: "#EAE6FF", text: "#403294", border: "#C0B6F2" },
+    { bg: "#F4F5F7", text: "#42526E", border: "#DFE1E6" }
+  ];
+
+  const weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  function getProjectColor(projectName) {
+    let hash = 0;
+    for (let i = 0; i < projectName.length; i++) {
+      hash = projectName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colorPalette.length;
+    return colorPalette[index];
+  }
+
+  document.getElementById('logDate').valueAsDate = new Date();
+  document.getElementById('qDate').valueAsDate = new Date();
+  document.getElementById('tlStartDate').valueAsDate = new Date();
+  document.getElementById('tlEndDate').valueAsDate = new Date();
+
+  function saveData() {
+    localStorage.setItem('mac_tracker_db', JSON.stringify(appData));
+    refreshDropdowns();
+    renderTables();
+    renderQuestions();
+    renderAssignerInsights();
+    renderGanttChart();
+  }
+
+  function switchTab(tabId, event) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
+    
+    if (tabId === 'insightsTab') {
+      renderAssignerInsights();
+    } else if (tabId === 'timelineTab') {
+      renderGanttChart();
+    }
+  }
+
+  // --- PROJECT MANAGEMENT ---
+  function addProject() {
+    const name = document.getElementById('newProjectName').value.trim();
+    const initiativesRaw = document.getElementById('newInitiatives').value.trim();
+    if (!name) return alert('Please enter a project name');
+
+    const initiatives = initiativesRaw ? initiativesRaw.split(',').map(s => s.trim()) : [];
+    appData.projects.push({ id: Date.now(), name, initiatives });
+    
+    document.getElementById('newProjectName').value = '';
+    document.getElementById('newInitiatives').value = '';
+    saveData();
+  }
+
+  function deleteProject(id) {
+    const project = appData.projects.find(p => p.id === id);
+    if (confirm(`Are you sure you want to delete project "${project ? project.name : ''}"?`)) {
+      appData.projects = appData.projects.filter(p => p.id !== id);
+      saveData();
+    }
+  }
+
+  // --- ASSIGNER MANAGEMENT ---
+  function addAssigner() {
+    const name = document.getElementById('newAssignerName').value.trim();
+    if (!name) return alert('Please enter an Assigner name');
+    if (!appData.assigners.includes(name)) {
+      appData.assigners.push(name);
+      document.getElementById('newAssignerName').value = '';
+      saveData();
+    } else {
+      alert('Assigner name already exists in the list.');
+    }
+  }
+
+  function deleteAssigner(name) {
+    if (confirm(`Are you sure you want to delete Assigner "${name}"?`)) {
+      appData.assigners = appData.assigners.filter(a => a !== name);
+      saveData();
+    }
+  }
+
+  // --- DROPDOWNS ---
+  function refreshDropdowns() {
+    const pSelect = document.getElementById('logProject');
+    const tlPSelect = document.getElementById('tlProject');
+    const aSelect = document.getElementById('logAssigner');
+    const tlASelect = document.getElementById('tlAssigner');
+    const qPersonSelect = document.getElementById('qPerson');
+
+    pSelect.innerHTML = '<option value="">Select Project</option>';
+    tlPSelect.innerHTML = '<option value="">Select Project</option>';
+    appData.projects.forEach(p => {
+      pSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+      tlPSelect.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+    });
+
+    aSelect.innerHTML = '<option value="">Select Assigner</option>';
+    tlASelect.innerHTML = '<option value="">Select Assigner</option>';
+    qPersonSelect.innerHTML = '<option value="">Select Person</option>';
+    appData.assigners.forEach(assigner => {
+      aSelect.innerHTML += `<option value="${assigner}">${assigner}</option>`;
+      tlASelect.innerHTML += `<option value="${assigner}">${assigner}</option>`;
+      qPersonSelect.innerHTML += `<option value="${assigner}">${assigner}</option>`;
+    });
+  }
+
+  function updateInitiativeDropdown(pSelectId, iSelectId) {
+    const pName = document.getElementById(pSelectId).value;
+    const iSelect = document.getElementById(iSelectId);
+    iSelect.innerHTML = '<option value="">Select Initiative</option>';
+
+    const project = appData.projects.find(p => p.name === pName);
+    if (project) {
+      project.initiatives.forEach(i => {
+        iSelect.innerHTML += `<option value="${i}">${i}</option>`;
+      });
+    }
+  }
+
+  // --- DAILY LOGGING ---
+  function saveLog() {
+    const logDate = document.getElementById('logDate').value;
+    const project = document.getElementById('logProject').value;
+    const remarks = document.getElementById('logRemarks').value.trim();
+    
+    if (!logDate) return alert('Please select a date.');
+    if (!project || !remarks) return alert('Project selection and Remarks are required.');
+
+    appData.logs.push({
+      id: Date.now(),
+      date: logDate,
+      project: project,
+      initiative: document.getElementById('logInitiative').value || 'N/A',
+      assigner: document.getElementById('logAssigner').value || 'N/A',
+      upcoming: document.getElementById('logUpcoming').value || 'None',
+      remarks: remarks
+    });
+
+    document.getElementById('logRemarks').value = '';
+    document.getElementById('logUpcoming').value = '';
+    saveData();
+    alert('Log entry added successfully!');
+  }
+
+  function deleteLog(id) {
+    if (confirm('Are you sure you want to delete this log entry?')) {
+      appData.logs = appData.logs.filter(l => l.id !== id);
+      saveData();
+    }
+  }
+
+  function clearLogs() {
+    if (confirm('WARNING: Are you sure you want to permanently delete ALL saved logs?')) {
+      appData.logs = [];
+      saveData();
+    }
+  }
+
+  // --- TIMELINE GANTT CHART (Date/Month (DAY) Format) ---
+  function addTimelineItem() {
+    const project = document.getElementById('tlProject').value;
+    const assigner = document.getElementById('tlAssigner').value;
+    const startDate = document.getElementById('tlStartDate').value;
+    const endDate = document.getElementById('tlEndDate').value;
+    const work = document.getElementById('tlWork').value.trim();
+
+    if (!project || !startDate || !endDate || !work) {
+      return alert('Project, Start/End dates, and Work Description are required.');
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      return alert('Start Date cannot be later than End Date.');
+    }
+
+    appData.timeline.push({
+      id: Date.now(),
+      project: project,
+      assigner: assigner || 'Unassigned',
+      startDate: startDate,
+      endDate: endDate,
+      work: work
+    });
+
+    document.getElementById('tlWork').value = '';
+    saveData();
+  }
+
+  function deleteTimelineItem(id) {
+    if (confirm('Are you sure you want to delete this timeline item?')) {
+      appData.timeline = appData.timeline.filter(item => item.id !== id);
+      saveData();
+    }
+  }
+
+  function renderGanttChart() {
+    const container = document.getElementById('ganttContainer');
+    container.innerHTML = '';
+
+    if (appData.timeline.length === 0) {
+      container.innerHTML = '<p style="color: var(--subtext); font-style: italic;">No items scheduled on the timeline yet.</p>';
+      return;
+    }
+
+    let minDate = new Date(appData.timeline[0].startDate);
+    let maxDate = new Date(appData.timeline[0].endDate);
+
+    appData.timeline.forEach(item => {
+      const s = new Date(item.startDate);
+      const e = new Date(item.endDate);
+      if (s < minDate) minDate = s;
+      if (e > maxDate) maxDate = e;
+    });
+
+    minDate.setDate(minDate.getDate() - 1);
+    maxDate.setDate(maxDate.getDate() + 1);
+
+    const dayList = [];
+    let curr = new Date(minDate);
+    while (curr <= maxDate) {
+      dayList.push(new Date(curr));
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    const cellWidth = 64; // px width to comfortably fit "DD/MM (DAY)"
+
+    let html = `<div class="notion-gantt-wrapper">`;
+    
+    // Header with DD/MM (DAY) Format
+    html += `<div class="notion-gantt-header">`;
+    dayList.forEach(d => {
+      const dayNum = String(d.getDate()).padStart(2, '0');
+      const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+      const dayName = weekdays[d.getDay()];
+      html += `<div class="notion-day-cell">${dayNum}/${monthNum}<br>(${dayName})</div>`;
+    });
+    html += `</div>`;
+
+    // Body
+    html += `<div class="notion-gantt-body">`;
+
+    // Grid Background
+    html += `<div class="notion-grid-bg">`;
+    dayList.forEach(() => {
+      html += `<div class="notion-grid-cell"></div>`;
+    });
+    html += `</div>`;
+
+    const sortedTL = [...appData.timeline].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+    sortedTL.forEach(item => {
+      const itemStart = new Date(item.startDate);
+      const itemEnd = new Date(item.endDate);
+
+      const offsetDays = Math.round((itemStart - minDate) / (1000 * 60 * 60 * 24));
+      const durationDays = Math.round((itemEnd - itemStart) / (1000 * 60 * 60 * 24)) + 1;
+
+      const leftPx = offsetDays * cellWidth;
+      const widthPx = durationDays * cellWidth;
+
+      const colorScheme = getProjectColor(item.project);
+
+      html += `<div class="notion-bar-row">`;
+      html += `<div class="notion-pill" style="left: ${leftPx}px; width: ${widthPx}px; background: ${colorScheme.bg}; color: ${colorScheme.text}; border-color: ${colorScheme.border};" title="${item.project} - ${item.assigner}\nTask: ${item.work} (${item.startDate} to ${item.endDate})">
+                <div class="notion-pill-header">${item.project} - ${item.assigner}</div>
+                <div class="notion-pill-task">${item.work}</div>
+               </div>`;
+      
+      html += `<div class="notion-delete-btn-wrap" style="left: ${leftPx + widthPx + 6}px;">
+                <button class="danger" style="padding: 2px 6px; font-size: 10px;" onclick="deleteTimelineItem(${item.id})">Delete</button>
+               </div>`;
+      html += `</div>`;
+    });
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+  }
+
+  // --- OPEN QUESTIONS & POC TASK LIST ---
+  function addQuestion() {
+    const date = document.getElementById('qDate').value;
+    const person = document.getElementById('qPerson').value;
+    const text = document.getElementById('qText').value.trim();
+
+    if (!date || !text) return alert('Date and Question details are required.');
+
+    appData.questions.push({
+      id: Date.now(),
+      date: date,
+      person: person || 'Unassigned',
+      question: text,
+      answer: '',
+      done: false
+    });
+
+    document.getElementById('qText').value = '';
+    saveData();
+  }
+
+  function toggleQuestionDone(id) {
+    const q = appData.questions.find(item => item.id === id);
+    if (q) {
+      q.done = !q.done;
+      saveData();
+    }
+  }
+
+  function updateQuestionAnswer(id, answerText) {
+    const q = appData.questions.find(item => item.id === id);
+    if (q) {
+      q.answer = answerText;
+      saveData();
+    }
+  }
+
+  function deleteQuestion(id) {
+    if (confirm('Are you sure you want to delete this question?')) {
+      appData.questions = appData.questions.filter(item => item.id !== id);
+      saveData();
+    }
+  }
+
+  function renderQuestions() {
+    const container = document.getElementById('questionsList');
+    container.innerHTML = '';
+
+    if (appData.questions.length === 0) {
+      container.innerHTML = '<p style="color: var(--subtext); font-style: italic;">No pending questions or POC items.</p>';
+      return;
+    }
+
+    const grouped = {};
+    appData.questions.forEach(q => {
+      if (!grouped[q.date]) grouped[q.date] = [];
+      grouped[q.date].push(q);
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+    sortedDates.forEach(dateStr => {
+      container.innerHTML += `<div class="date-group-header">Date: ${dateStr}</div>`;
+      
+      grouped[dateStr].forEach((q, index) => {
+        const itemNumber = index + 1;
+        const statusBadge = q.done 
+          ? `<span class="badge badge-answered">ANSWERED</span>` 
+          : `<span class="badge badge-open">OPEN</span>`;
+
+        container.innerHTML += `
+          <div class="question-item ${q.done ? 'completed' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; align-items: flex-start; gap: 8px; width: 85%;">
+                <input type="checkbox" ${q.done ? 'checked' : ''} onchange="toggleQuestionDone(${q.id})" style="width: auto; margin-top: 3px; cursor: pointer;">
+                <div>
+                  <div class="question-text">${itemNumber}. ${q.question}</div>
+                  <div class="question-meta">
+                    Asked to: <strong>${q.person}</strong>
+                    <span>| Status: ${statusBadge}</span>
+                  </div>
+                </div>
+              </div>
+              <button class="danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.id})">Delete</button>
+            </div>
+            <div class="comment-box">
+              <label style="margin-bottom: 2px;">Answer / Remarks:</label>
+              <input type="text" value="${q.answer || ''}" placeholder="Type answer or update notes here..." onblur="updateQuestionAnswer(${q.id}, this.value)">
+            </div>
+          </div>`;
+      });
+    });
+  }
+
+  // --- TABLE RENDERING ---
+  function renderTables() {
+    const pBody = document.querySelector('#projectsTable tbody');
+    pBody.innerHTML = '';
+    appData.projects.forEach(p => {
+      pBody.innerHTML += `<tr>
+        <td><strong>${p.name}</strong></td>
+        <td>${p.initiatives.join(', ') || '<em>None</em>'}</td>
+        <td><button class="danger" onclick="deleteProject(${p.id})">Delete</button></td>
+      </tr>`;
+    });
+
+    const aBody = document.querySelector('#assignersTable tbody');
+    aBody.innerHTML = '';
+    appData.assigners.forEach(name => {
+      aBody.innerHTML += `<tr>
+        <td><strong>${name}</strong></td>
+        <td><button class="danger" onclick="deleteAssigner('${name.replace(/'/g, "\\'")}')">Delete</button></td>
+      </tr>`;
+    });
+
+    const lBody = document.querySelector('#logsTable tbody');
+    lBody.innerHTML = '';
+    
+    const sortedLogs = [...appData.logs].sort((a, b) => new Date(b.date) - new Date(a.date));
+    sortedLogs.forEach(l => {
+      lBody.innerHTML += `<tr>
+        <td><strong>${l.date}</strong></td>
+        <td><strong>${l.project}</strong></td>
+        <td>${l.initiative}</td>
+        <td>${l.assigner || l.ba || 'N/A'}</td>
+        <td>${l.remarks}</td>
+        <td>${l.upcoming}</td>
+        <td><button class="danger" onclick="deleteLog(${l.id})">X</button></td>
+      </tr>`;
+    });
+  }
+
+  // --- ASSIGNER INSIGHTS DASHBOARD ---
+  function populateInsightYearDropdown() {
+    const yearSelect = document.getElementById('insightYear');
+    const currentYear = new Date().getFullYear();
+    yearSelect.innerHTML = '';
+    for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+      yearSelect.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+    }
+    document.getElementById('insightMonth').value = new Date().getMonth();
+  }
+
+  function renderAssignerInsights() {
+    const selectedMonth = parseInt(document.getElementById('insightMonth').value);
+    const selectedYear = parseInt(document.getElementById('insightYear').value);
+
+    const monthlyLogs = appData.logs.filter(l => {
+      const d = new Date(l.date);
+      const person = l.assigner || l.ba;
+      return d.getUTCMonth() === selectedMonth && d.getUTCFullYear() === selectedYear && person && person !== 'N/A';
+    });
+
+    const assignerCounts = {};
+    monthlyLogs.forEach(l => {
+      const person = l.assigner || l.ba;
+      assignerCounts[person] = (assignerCounts[person] || 0) + 1;
+    });
+
+    const totalCount = monthlyLogs.length;
+    const chartContainer = document.getElementById('chartContainer');
+    const tbody = document.querySelector('#insightsTable tbody');
+    
+    chartContainer.innerHTML = '';
+    tbody.innerHTML = '';
+
+    if (totalCount === 0) {
+      chartContainer.innerHTML = '<p style="color: var(--subtext); font-style: italic;">No assigner logs found for the selected month.</p>';
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--subtext);">No data available</td></tr>';
+      return;
+    }
+
+    const sortedAssigners = Object.keys(assignerCounts).sort((a, b) => assignerCounts[b] - assignerCounts[a]);
+
+    sortedAssigners.forEach(person => {
+      const count = assignerCounts[person];
+      const percentage = Math.round((count / totalCount) * 100);
+
+      chartContainer.innerHTML += `
+        <div class="chart-row">
+          <div class="chart-label" title="${person}">${person}</div>
+          <div class="chart-bar-bg">
+            <div class="chart-bar-fill" style="width: ${percentage}%;"></div>
+          </div>
+          <div class="chart-value">${count} tasks</div>
+        </div>`;
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${person}</strong></td>
+          <td>${count}</td>
+          <td>${percentage}%</td>
+        </tr>`;
+    });
+  }
+
+  // --- GEMINI REPORT GENERATOR ---
+  function generateGeminiPrompt() {
+    if (appData.logs.length === 0) {
+      document.getElementById('geminiPromptOutput').innerText = "No work logs found. Log some work under 'Daily Log' first!";
+      return;
+    }
+
+    let promptText = `Act as an executive performance review writer. Below is my raw work log detailing project deliverables, task assigners, and upcoming tasks.\n\n`;
+    promptText += `Please generate a structured, impact-oriented Performance Assessment Report formatted for a formal mid-year or full-year review.\n\n`;
+    promptText += `### RAW WORK LOG DATA:\n`;
+
+    const sortedLogs = [...appData.logs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    sortedLogs.forEach(l => {
+      promptText += `- [Date: ${l.date}] Project: "${l.project}" | Initiative: "${l.initiative}" | Assigned By: "${l.assigner || l.ba || 'N/A'}"\n`;
+      promptText += `  Work Done: ${l.remarks}\n`;
+      promptText += `  Upcoming Work Identified: ${l.upcoming}\n\n`;
+    });
+
+    promptText += `### INSTRUCTIONS FOR THE REPORT:\n`;
+    promptText += `1. Group achievements logically under major Projects and Initiatives.\n`;
+    promptText += `2. Frame contributions focusing on business impact, problem-solving, and support delivered across assigners.\n`;
+    promptText += `3. Include a dedicated section for "Future Scope & Pipeline Work" using the logged upcoming work items.\n`;
+    promptText += `4. Format using professional bullet points ready for direct submission.`;
+
+    document.getElementById('geminiPromptOutput').innerText = promptText;
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('geminiPromptOutput').innerText;
+    if (text.startsWith("Click") || text.startsWith("No work logs")) {
+      return alert('Generate a prompt first!');
+    }
+    navigator.clipboard.writeText(text);
+    alert('Prompt copied to clipboard! You can now paste it directly into Gemini.');
+  }
+
+  // --- BACKUP & RESTORE FUNCTIONS ---
+  function exportBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    const fileName = `WorkTracker_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", fileName);
+    document.body.appendChild(dlAnchorElem);
+    dlAnchorElem.click();
+    dlAnchorElem.remove();
+  }
+
+  function importBackup(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(e) {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        if (confirm("Importing backup will replace current local data. Continue?")) {
+          appData = importedData;
+          saveData();
+          alert("Backup successfully restored!");
+        }
+      } catch (err) {
+        alert("Invalid backup file structure.");
+      }
+    };
+    if (event.target.files[0]) {
+      fileReader.readAsText(event.target.files[0]);
+    }
+  }
+
+  // Boot Application
+  populateInsightYearDropdown();
+  refreshDropdowns();
+  renderTables();
+  renderQuestions();
+  renderAssignerInsights();
+  renderGanttChart();
+</script>
+</body>
+</html>
